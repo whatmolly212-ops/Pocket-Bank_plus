@@ -5,7 +5,7 @@ spring:
     url: jdbc:mysql://gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/pocket_bank?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: 48NouLV9vQyeye8.root
     # 【⚠️重要】请把下面括号和文字删掉，换成你刚才点 "Generate Password" 生成出来的那个真正的长密码
-    password: Lh3kiZWgNlJ3KsSg
+    password: 'Lh3kiZWgNlJ3KsSg'
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 server:

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.pocketbank_plus.mapper.BillMapper">
+    <select id="select" resultType="com.example.pocketbank_plus.pojo.Bill">
+        select * from bill
+    </select>
+    <select id="selectByMonth" resultType="com.example.pocketbank_plus.pojo.Bill">
+        select * from bill where DATE_FORMAT(create_time, '%Y-%m') = #{yearMonth}
+    </select>
+    <insert id="insert"
+            parameterType="com.example.pocketbank_plus.pojo.Bill"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO bill (
+        user_id,
+        expense,
+        type,
+        remark,      <!-- 新增：插入登录密码 -->
+        create_time
+        ) VALUES (
+        #{userId},
+        #{expense},
+        #{type},
+        #{remark},  <!-- 对应实体类中的 password 属性 -->
+        #{createTime}
+        )
+    </insert>
+    <select id="selectExpenseStatistics" resultType="map">
+        SELECT
+        type as name,
+        SUM(ABS(expense)) as value
+        FROM bill
+        WHERE user_id = #{userId}
+        AND DATE_FORMAT(create_time, '%Y-%m') = #{yearMonth}
+        GROUP BY type
+    </select>
+</mapper>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.pocketbank_plus.mapper.TransactionRecordMapper">
+    <select id="selectByAccountNo" resultType="com.example.pocketbank_plus.pojo.TransactionRecord">
+        select * from transaction_record where account_no=#{accountNo}
+    </select>
+    <!--resultType 是给 <select>（查询）用的，用来指定返回的实体类 / 数据类型-->
+    <!--
+  id: 对应Mapper接口的insert方法名（必须一致）
+  parameterType: 入参是交易记录实体类（按需替换成你的真实包名）
+  useGeneratedKeys+keyProperty: 如果id是自增主键，加上这两行（核心！）
+-->
+    <insert id="insert"
+            parameterType="com.example.pocketbank_plus.pojo.TransactionRecord"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO transaction_record (
+        account_no,        <!-- 注意：如果id是自增，这里要删掉id字段 -->
+        type,
+        amount,
+        target_account_no,
+        create_time,
+        remark
+        ) VALUES (
+        #{AccountNo},      <!-- 实体类属性名（建议驼峰，和数据库下划线对应） -->
+        #{type},
+        #{amount},
+        #{targetAccountNo},
+        #{createTime},
+        #{remark}
+        )
+    </insert>
+    <select id="selectRecentAmounts" resultType="java.math.BigDecimal">
+        SELECT amount
+        FROM transaction_record
+        WHERE account_no = #{accountNo}
+        AND (type = 'WITHDRAW' OR type = 'TRANSFER')
+        ORDER BY create_time DESC
+        LIMIT 20
+    </select>
+</mapper>

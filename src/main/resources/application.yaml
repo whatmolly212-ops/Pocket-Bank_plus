@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: Pocket-Bank_plus
+  datasource: # 数据库配置（层级结构更清晰）
+    url: jdbc:mysql://localhost:3306/pocket_bank
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+server:
+  port: 8080  # 项目启动端口
+  servlet:
+    context-path: /demo  # 项目访问路径前缀
+  tomcat:
+    uri-encoding: UTF-8
+logging:
+  level:
+    org.springframework.web: INFO  # 日志级别
+    com.demo.mapper: DEBUG   # 自定义包的日志级别
+# 原 MyBatis-Plus 配置删除，替换为原生 MyBatis 配置
+mybatis:
+  mapper-locations: classpath:mapper/*.xml  # 指定Mapper XML文件的位置
+  type-aliases-package: com.bank.entity     # 实体类别名包（简化XML中的类名）
+  configuration:
+    map-underscore-to-camel-case: true      # 下划线转驼峰（id_card → idCard）
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # 打印SQL（开发用）

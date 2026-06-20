@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.pocketbank_plus.mapper.AccountMapper">
+    <select id="selectByuserId" resultType="com.example.pocketbank_plus.pojo.Account">
+        select * from account where user_id=#{userId}
+    </select>
+    
+    <select id="selectByaccountNo" resultType="com.example.pocketbank_plus.pojo.Account">
+        select * from account where account_no=#{accountNo}
+    </select>
+
+    <select id="selectByid" resultType="com.example.pocketbank_plus.pojo.Account">
+        select * from account where id=#{id}
+    </select>
+
+    <update id="updateBalance_plus">
+        UPDATE account
+        SET balance = balance + #{money}
+        WHERE account_no = #{accountNo}
+    </update>
+
+    <update id="updateBalance_reduce">
+        UPDATE account
+        SET balance = balance - #{money}
+        WHERE account_no = #{accountNo}
+    </update>
+
+    <insert id="insert" parameterType="com.example.pocketbank_plus.pojo.Account"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        insert into account(user_id, account_no, balance, pay_password, create_time)
+        values(#{userId}, #{accountNo}, #{balance}, #{payPassword}, #{createTime})
+    </insert>
+</mapper>

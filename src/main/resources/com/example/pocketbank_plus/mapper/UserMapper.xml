@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.pocketbank_plus.mapper.UserMapper">
+
+    <!-- 1. 根据ID查询用户（增加了 password 字段查询） -->
+    <select id="selectById" parameterType="Long" resultType="com.example.pocketbank_plus.pojo.User">
+        SELECT
+        id,
+        name,
+        phone,
+        id_card,
+        password,      <!-- 新增：查询出登录密码 -->
+        create_time
+        FROM user
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByPhone" parameterType="String" resultType="com.example.pocketbank_plus.pojo.User">
+        SELECT
+        id,
+        name,
+        phone,
+        id_card,
+        password,      <!-- 新增：查询出登录密码 -->
+        create_time
+        FROM user
+        WHERE phone = #{phone}
+    </select>
+
+    <!-- 2. 插入用户（增加了 password 字段，用于注册） -->
+    <insert id="insertUser"
+            parameterType="com.example.pocketbank_plus.pojo.User"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO user (
+        name,
+        phone,
+        id_card,
+        password,      <!-- 新增：插入登录密码 -->
+        create_time
+        ) VALUES (
+        #{name},
+        #{phone},
+        #{idCard},
+        #{password},  <!-- 对应实体类中的 password 属性 -->
+        #{createTime}
+        )
+    </insert>
+
+    <!-- 3. 根据ID更新用户信息（增加了密码修改支持） -->
+    <update id="update" parameterType="com.example.pocketbank_plus.pojo.User">
+        UPDATE user
+        SET
+        name = #{name},
+        phone = #{phone},
+        id_card = #{idCard},
+        password = #{password}, <!-- 新增：允许修改密码 -->
+        create_time = #{createTime}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 4. 统计手机号（通常用于注册时的重复性校验） -->
+    <select id="countByPhone" resultType="int">
+        SELECT count(*)
+        FROM user
+        WHERE phone = #{phone} <!-- 这里我帮你改了一下逻辑，查特定手机号是否存在更实用 -->
+    </select>
+
+
+</mapper>

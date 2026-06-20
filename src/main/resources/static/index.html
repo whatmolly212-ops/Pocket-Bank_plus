@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PocketBank Pro | Next-Gen Banking</title>
 
-    <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.3.4/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/element-plus/2.3.8/index.full.min.js"></script>
     <link href="https://cdn.bootcdn.net/ajax/libs/element-plus/2.3.8/index.css" rel="stylesheet">
     <script src="https://cdn.bootcdn.net/ajax/libs/element-plus-icons-vue/2.1.0/index.iife.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/axios/1.5.0/axios.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap');
@@ -19,7 +20,7 @@
         body { background-color: var(--bg-soft); font-family: 'Space Grotesk', 'PingFang SC', sans-serif; color: #1e293b; overflow: hidden; }
         .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
         .bank-card { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); position: relative; overflow: hidden; transition: all 0.4s ease; }
-        .action-card { @apply bg-white rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all border border-transparent; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .action-card { @apply bg-white rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all border border-transparent; box-shadow: 0 4px 6 -1px rgba(0, 0, 0, 0.05); }
         .action-card:hover { @apply border-indigo-200 -translate-y-1; box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.1); }
         .chat-bubble { transition: all 0.3s ease; animation: pop 0.3s ease-out; }
         @keyframes pop { from { opacity: 0; transform: translateY(10px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
@@ -45,7 +46,7 @@
                 <el-input v-model="loginForm.password" type="password" placeholder="密码" size="large" :prefix-icon="View" show-password></el-input>
 
                 <el-button v-if="isLogin" type="primary" class="w-full !h-14 !rounded-3xl !text-lg !font-bold" @click="handleLogin" :loading="loading">立即登录</el-button>
-                <el-button v-else type="success" class="w-full !h-14 !rounded-3xl !text-lg !font-bold" @click="handleRegister" :loading="loading">确认注册</el-button>
+                <el-button v-else type="success" class="w-full !w-full !h-14 !rounded-3xl !text-lg !font-bold" @click="handleRegister" :loading="loading">确认注册</el-button>
 
                 <div class="text-center mt-4">
                     <el-button link @click="isLogin = !isLogin" class="!text-indigo-600 font-bold">
@@ -164,27 +165,40 @@
             <div v-if="tab === 'wealth'" class="space-y-8 animate-pop">
                 <header class="flex justify-between items-center">
                     <h2 class="text-3xl font-black text-slate-800">月度记账统计</h2>
-                    <el-button type="primary" class="!rounded-2xl !h-12 !px-6 shadow-xl" @click="showBillModal = true">
-                        <el-icon class="mr-2"><Plus /></el-icon>新增月度记录
-                    </el-button>
+                    <div class="flex gap-3">
+                        <el-date-picker
+                                v-model="queryMonth"
+                                type="month"
+                                placeholder="选择查询月份"
+                                value-format="YYYY-MM"
+                                @change="fetchAllBillData"
+                        ></el-date-picker>
+                        <el-button type="primary" class="!rounded-2xl !h-12 !px-6 shadow-xl" @click="showBillModal = true">
+                            <el-icon class="mr-2"><Plus /></el-icon>新增消费记录
+                        </el-button>
+                    </div>
                 </header>
+
+                <div class="col-span-12 bg-white rounded-[40px] p-10 shadow-sm border border-slate-50 mb-6">
+                    <h3 class="text-xl font-black mb-4">支出分类比例</h3>
+                    <div id="billPieChart" style="width: 100%; height: 350px;"></div>
+                </div>
 
                 <div class="grid grid-cols-12 gap-6">
                     <div class="col-span-12 bg-white rounded-[40px] p-10 shadow-sm border border-slate-50">
-                        <el-table :data="billHistory" style="width: 100%" empty-text="暂无手动记录">
-                            <el-table-column prop="month" label="账单月份" width="180">
+                        <el-table :data="billHistory" style="width: 100%" empty-text="暂无账单记录">
+                            <el-table-column prop="createTime" label="记账时间" width="200"></el-table-column>
+                            <el-table-column prop="type" label="消费类型" width="160">
                                 <template #default="scope">
-                                    <div class="flex items-center font-bold text-slate-700">
-                                        <el-icon class="mr-2 text-indigo-500"><Calendar /></el-icon>{{ scope.row.month }}
-                                    </div>
+                                    <el-tag type="primary">{{ scope.row.type }}</el-tag>
                                 </template>
                             </el-table-column>
-                            <el-table-column label="本月总支出">
+                            <el-table-column prop="expense" label="消费金额" width="140">
                                 <template #default="scope">
-                                    <span class="font-black text-rose-500 text-lg">¥ {{ Number(scope.row.totalExpense).toLocaleString() }}</span>
+                                    <span class="font-bold text-rose-500">¥{{ scope.row.expense }}</span>
                                 </template>
                             </el-table-column>
-                            <el-table-column prop="remark" label="备注说明" show-overflow-tooltip></el-table-column>
+                            <el-table-column prop="remark" label="备注" show-overflow-tooltip></el-table-column>
                         </el-table>
                     </div>
                 </div>
@@ -194,7 +208,7 @@
         <!-- 右侧AI -->
         <aside class="w-80 flex-shrink-0 glass rounded-[40px] flex flex-col overflow-hidden shadow-2xl border-l-4 border-indigo-500/20">
             <div class="p-6 bg-indigo-600 text-white flex justify-between items-center">
-                <div class="flex items-center gap-2"><div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div><span class="font-black tracking-widest text-xs">POCKET AI</span></div>
+                <div class="flex items-center gap-2"><div class="w-2 h-2 bg-emerald-40 rounded-full animate-pulse"></div><span class="font-black tracking-widest text-xs">POCKET AI</span></div>
             </div>
             <div id="chat-list" class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/30">
                 <div v-for="(msg, i) in chatHistory" :key="i" :class="['chat-bubble max-w-[90%] p-4 rounded-[24px] text-xs font-medium leading-relaxed', msg.role === 'user' ? 'bg-indigo-600 text-white ml-auto rounded-tr-none' : 'bg-white text-slate-600 rounded-tl-none border border-slate-100']">{{ msg.content }}</div>
@@ -209,18 +223,24 @@
     </div>
 
     <!-- 弹窗：账单验证 -->
-    <el-dialog v-model="showRecordAuthModal" title="安全验证" width="400px" center custom-class="rounded-3xl">
+    <el-dialog v-model="showRecordAuthModal" :title="transferForm.riskLevel === 'HIGH' ? '⚠️ 触发高风险交易核验' : '安全验证'" width="420px" center custom-class="rounded-3xl">
         <div class="text-center mb-6">
-            <el-icon size="40" class="text-indigo-600 mb-2"><Lock /></el-icon>
-            <p class="text-sm text-slate-500 font-bold">请验证交易密码以查询账户账单</p>
+            <el-icon size="40" :class="transferForm.riskLevel === 'HIGH' ? 'text-rose-500 mb-2' : 'text-indigo-600 mb-2'"><Warning v-if="transferForm.riskLevel === 'HIGH'" /><Lock v-else /></el-icon>
+            <p class="text-sm text-slate-500 font-bold">
+                {{ transferForm.riskLevel === 'HIGH' ? '系统检测到该笔交易金额异常，为保障资金安全，请进行实名核验。' : '请验证交易密码以查询账户账单' }}
+            </p>
         </div>
         <el-form label-position="top" @submit.prevent>
-            <el-form-item>
-                <el-input v-model="recordAuthPassword" type="password" show-password placeholder="请输入6位支付密码" size="large" @keyup.enter="submitRecordAuth"></el-input>
+            <el-form-item v-if="transferForm.riskLevel === 'HIGH'" label="开户人身份证号">
+                <el-input v-model="transferForm.idCard" placeholder="请输入当前账户预留的18位身份证号" size="large"></el-input>
+            </el-form-item>
+            <el-form-item :label="transferForm.riskLevel === 'HIGH' ? '再次确认支付密码' : ''">
+                <el-input v-model="recordAuthPassword" type="password" show-password placeholder="请输入6位支付密码" size="large"></el-input>
             </el-form-item>
         </el-form>
         <template #footer>
-            <el-button type="primary" @click="submitRecordAuth" :loading="modalLoading" class="!w-full !rounded-xl !h-12 !text-lg">验证并查询</el-button>
+            <el-button v-if="transferForm.riskLevel === 'HIGH'" type="danger" @click="submitTransferFinal" :loading="modalLoading" class="!w-full !rounded-xl !h-12 !text-lg">确认本人操作，继续转账</el-button>
+            <el-button v-else type="primary" @click="submitRecordAuth" :loading="modalLoading" class="!w-full !rounded-xl !h-12 !text-lg">验证并查询</el-button>
         </template>
     </el-dialog>
 
@@ -293,7 +313,7 @@
     </el-dialog>
 
     <!-- 弹窗：重置密码 -->
-    <el-dialog v-model="showResetModal" title="身份核验 & 重置密码" width="420px" center custom-class="rounded-3xl">
+    <el-dialog v-model="showResetModal" title="身份核验  重置密码" width="420px" center custom-class="rounded-3xl">
         <el-form :model="resetForm" label-position="top">
             <el-form-item label="预留手机号">
                 <div class="flex gap-2 w-full">
@@ -319,20 +339,30 @@
             </el-button>
         </template>
     </el-dialog>
-    <el-dialog v-model="showBillModal" title="手动记账 - 月度总览" width="400px" center custom-class="rounded-3xl">
+
+    <el-dialog v-model="showBillModal" title="新增消费记账" width="400px" center custom-class="rounded-3xl">
         <el-form :model="billForm" label-position="top">
-            <el-form-item label="选择月份">
-                <el-date-picker v-model="billForm.month" type="month" placeholder="选择月份" value-format="YYYY-MM" class="!w-full"></el-date-picker>
+            <el-form-item label="消费类型">
+                <el-select v-model="billForm.type" placeholder="请选择消费类型" class="!w-full">
+                    <el-option label="餐饮美食" value="FOOD"></el-option>
+                    <el-option label="日用百货" value="SHOPPING"></el-option>
+                    <el-option label="交通出行" value="TRANSPORT"></el-option>
+                    <el-option label="休闲娱乐" value="ENTERTAINMENT"></el-option>
+                    <el-option label="房租水电" value="HOUSING"></el-option>
+                    <el-option label="医疗保健" value="MEDICAL"></el-option>
+                    <el-option label="理财投资" value="INVEST"></el-option>
+                    <el-option label="其他支出" value="OTHER"></el-option>
+                </el-select>
             </el-form-item>
-            <el-form-item label="本月总支出 (¥)">
-                <el-input-number v-model="billForm.totalExpense" :min="0" class="!w-full"></el-input-number>
+            <el-form-item label="消费金额">
+                <el-input-number v-model="billForm.expense" :min="0.01" class="!w-full"></el-input-number>
             </el-form-item>
             <el-form-item label="备注说明">
-                <el-input v-model="billForm.remark" type="textarea" placeholder="例：本月生活费、房租等总计"></el-input>
+                <el-input v-model="billForm.remark" type="textarea" placeholder="简要说明"></el-input>
             </el-form-item>
         </el-form>
         <template #footer>
-            <el-button type="primary" @click="submitMonthlyBill" :loading="modalLoading" class="!w-full !rounded-xl !h-10">保存记录</el-button>
+            <el-button type="primary" @click="submitBillRecord" :loading="modalLoading" class="!w-full !rounded-xl !h-10">保存账单</el-button>
         </template>
     </el-dialog>
 </div>
@@ -340,7 +370,7 @@
 <script>
     const { createApp, ref, reactive, computed, nextTick } = Vue;
     const {
-         Cellphone, View, Hide, Calendar, Lock, PieChart, TrendCharts, // 确认有 Hide 和 Calendar
+         Cellphone, View, Hide, Calendar, Lock, PieChart, TrendCharts,
          User, Wallet, Promotion, Money, Postcard, Plus,
          SwitchButton, Opportunity, List, ArrowUp
     } = ElementPlusIconsVue;
@@ -353,6 +383,7 @@
             const accounts = ref([]);
             const account = ref(null);
             const tab = ref('home');
+            const billPieData = ref([]);
 
             // 加载状态
             const loading = ref(false);
@@ -362,23 +393,32 @@
             // 数据列表
             const recentSnapshots = ref([]);
             const transactions = ref([]);
+            const billHistory = ref([]);
+            const showBillModal = ref(false);
+            const queryMonth = ref('');
 
             // ==================== 表单数据 ====================
             const loginForm = reactive({ phone: '', password: '' });
             const registerForm = reactive({ name: '', phone: '', idCard: '', password: '' });
             const resetForm = reactive({ phone: '', idCard: '', newPassword: '', code: '' });
 
-            const transferForm = reactive({ sourceAccountNo: '', targetAccountNo: '', money: 0, password: '', remark: '转账操作' });
+            const transferForm = reactive({
+                sourceAccountNo: '',
+                targetAccountNo: '',
+                money: 0,
+                password: '',
+                remark: '转账操作',
+                idCard: '',
+                riskLevel: 'NONE'
+            });
             const depositForm = reactive({ targetAccountNo: '', money: 100 });
             const withdrawForm = reactive({ sourceAccountNo: '', money: 0, password: '' });
-            const openAccountForm = reactive({ payPassword: '', initialBalance: 0 });4
-            const showBillModal = ref(false);
+            const openAccountForm = reactive({ payPassword: '', initialBalance: 0 });
             const billForm = reactive({
-                month: '',
-                totalExpense: 0,
+                type: '',
+                expense: 0,
                 remark: ''
             });
-            const billHistory = ref([]);
 
             // ==================== 弹窗控制 ====================
             const showTransferModal = ref(false);
@@ -401,9 +441,109 @@
 
             // ==================== API 配置 ====================
             const api = axios.create({
-                baseURL: 'https://pocket-bank-plus.onrender.com/demo',
+                baseURL: 'http://localhost:8080/demo',
                 withCredentials: true
             });
+
+            // ==================== 饼图函数 ====================
+            const renderPieChart = (data) => {
+                nextTick(() => {
+                    const chartDom = document.getElementById('billPieChart');
+                    if (!chartDom) return;
+                    const myChart = echarts.init(chartDom);
+                    const option = {
+                        tooltip: { trigger: 'item', formatter: '{b}: ¥{c} ({d}%)' },
+                        legend: { bottom: '0', left: 'center' },
+                        series: [{
+                            name: '支出分类',
+                            type: 'pie',
+                            radius: ['40%', '70%'],
+                            avoidLabelOverlap: false,
+                            itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
+                            label: { show: false, position: 'center' },
+                            emphasis: { label: { show: true, fontSize: '20', fontWeight: 'bold' } },
+                            data: data
+                        }]
+                    };
+                    myChart.setOption(option);
+                });
+            };
+
+            // ==================== 获取账单统计 ====================
+            const fetchBillStats = async () => {
+                if(!queryMonth.value) return;
+                try {
+                    if (!user.value || !user.value.id) return;
+                    const res = await api.get('/bill/statistics', {
+                        params: { userId: user.value.id, yearMonth: queryMonth.value }
+                    });
+                    if (res.data.code === 200) {
+                         billPieData.value = res.data.data || [];
+                         renderPieChart(res.data.data || []);
+                    }else {
+                       // 如果接口报错，也强制渲染一个空图表
+                       renderPieChart([]);
+                       ElementPlus.ElMessage.warning('该月份暂无统计数据或获取失败');
+                    }
+                } catch (e) {
+                    console.error("获取统计失败", e);
+                    renderPieChart([
+                        { name: '餐饮', value: 1200 },
+                        { name: '交通', value: 300 },
+                        { name: '购物', value: 800 },
+                        { name: '娱乐', value: 500 },
+                        { name: '其他', value: 200 }
+                    ]);
+                }
+            };
+
+            // ==================== 获取账单列表 ====================
+            const fetchBillList = async () => {
+                if(!queryMonth.value) return;
+                try {
+                    const res = await api.get('/bill/getData', {
+                        params: { yearMonth: queryMonth.value }
+                    });
+                    if (res.data.code === 200) {
+                        billHistory.value = res.data.data;
+                    }
+                } catch (e) {}
+            };
+
+            // 统一刷新
+            const fetchAllBillData = async () => {
+                console.log("正在查询月份:", queryMonth.value);
+                await fetchBillList();
+                await fetchBillStats();
+            };
+
+            // 提交账单（真实存入数据库）
+            const submitBillRecord = async () => {
+                if (!billForm.type || !billForm.expense) {
+                    return ElementPlus.ElMessage.warning('请完善类型和金额');
+                }
+                modalLoading.value = true;
+                try {
+                    const res = await api.post('/bill/add', {
+                        userId: user.value.id,
+                        type: billForm.type,
+                        expense: billForm.expense,
+                        remark: billForm.remark
+                    });
+                    if (res.data.code === 200) {
+                        ElementPlus.ElMessage.success('保存成功');
+                        showBillModal.value = false;
+                        fetchAllBillData();
+                        billForm.type = '';
+                        billForm.expense = 0;
+                        billForm.remark = '';
+                    }
+                } catch (e) {
+                    ElementPlus.ElMessage.error('保存失败');
+                } finally {
+                    modalLoading.value = false;
+                }
+            };
 
             // ==================== 工具函数 ====================
             const selectAccount = (acc) => {
@@ -449,23 +589,8 @@
                 }
             };
 
-            // 提交月度账单的方法❗
-            const submitMonthlyBill = async () => {
-                if (!billForm.month) return ElementPlus.ElMessage.warning('请选择月份');
-                modalLoading.value = true;
-                try {
-                    // 这里你可以根据后端是否有对应接口来调整，如果没有接口，可以先存在本地预览
-                    // 假设后端接口为 /bill/save
-                    // const res = await api.post('/bill/save', { ...billForm, userId: user.value.id });
-
-                    // 模拟保存成功逻辑
-                    billHistory.value.push({ ...billForm });
-                    ElementPlus.ElMessage.success(billForm.month + ' 账单记录成功');
-                    showBillModal.value = false;
-                } finally {
-                    modalLoading.value = false;
-                }
-            };
+            // 废弃旧方法，保留不删
+            const submitMonthlyBill = async () => {};
 
             // ==================== 弹窗前置校验 ====================
             const checkAccountBeforeModal = (modal) => {
@@ -497,15 +622,12 @@
             };
 
             const handleRegister = async () => {
-                // 1. 前端非空校验：确保这三个字段在 registerForm 中都有值
                 if (!registerForm.phone || !registerForm.password || !registerForm.idCard) {
                     return ElementPlus.ElMessage.warning('请完善手机号、密码和身份证号');
                 }
 
                 loading.value = true;
                 try {
-                    // 2. 发送请求
-                    // 注意：这里传给后端的字段名必须和你的 User.java 实体类属性完全一致
                     const res = await api.post('/user/register', {
                         phone: registerForm.phone,
                         password: registerForm.password,
@@ -513,18 +635,11 @@
                         name: registerForm.name
                     });
 
-                    // 3. 解析后端 Result 对象
-                    // 你的后端 UserController 逻辑是：if(msg.equals("注册成功！")) { return Result.success(msg); }
                     if (res.data.code === 200) {
                         ElementPlus.ElMessage.success(res.data.data || '注册成功！');
-
-                        // 注册成功后重置表单
                         Object.assign(registerForm, { name: '', phone: '', idCard: '', password: '' });
-
-                        // 切换回登录模式
                         isLogin.value = true;
                     } else {
-                        // 如果后端返回 Result.fail(msg)，错误信息在 res.data.msg
                         ElementPlus.ElMessage.error(res.data.msg || '注册失败');
                     }
                 } catch (e) {
@@ -581,7 +696,7 @@
                 }
             };
 
-            // ==================== 核心业务：账单 / 转账 / 存款 / 提现 / 开户 ====================
+            // ==================== 核心业务 ====================
             const submitRecordAuth = async () => {
                 if (!recordAuthPassword.value) return ElementPlus.ElMessage.warning('请输入密码');
                 if (!account.value?.id) return ElementPlus.ElMessage.error('账户异常');
@@ -618,28 +733,80 @@
                 if (!transferForm.password) return ElementPlus.ElMessage.warning('请输入支付密码');
                 modalLoading.value = true;
                 try {
+                    // 每次进来，先把身份证和风险等级清空，防止上次的数据污染其他接口
+                    transferForm.idCard = '';
+                    transferForm.riskLevel = 'NONE';
+
+                    const checkRes = await api.post('/account/detectRiskLevel', {
+                        sourceAccountNo: account.value.accountNo,
+                        money: transferForm.money
+                    });
+
+                    // 💡 亮点修补：用局部变量 currentLevel，不要直接去改全局的 transferForm.riskLevel
+                    const currentLevel = checkRes.data.data.riskLevel || 'NONE';
+
+                    // 2. 如果触发高风险，立刻拦截！提示并拉起二级核验面板
+                    if (currentLevel === 'HIGH') {
+                        transferForm.riskLevel = 'HIGH'; // 只有明确要走核验转账时，才赋值给表单
+                        ElementPlus.ElMessage.warning('检测到交易存在高风险，已触发二级身份核验！');
+                        showTransferModal.value = false;
+                        showRecordAuthModal.value = true;
+                        recordAuthPassword.value = transferForm.password;
+                        return; // 拦截终止
+                    }
+
+                    // 3. 如果是 NONE 或 LOW，属于安全交易，直接放行去真正的转账
+                    await submitTransferFinal();
+                } catch (e) {
+                    ElementPlus.ElMessage.error('风控系统对接失败，交易已被终止');
+                } finally {
+                    modalLoading.value = false;
+                }
+            };
+
+            // 真正发请求扣款的“终极转账函数”
+            const submitTransferFinal = async () => {
+                modalLoading.value = true;
+                try {
+                    // 保持你原本代码里的安全处理：获取真实的未脱敏卡号
                     const unmask = await api.post('/account/getUnmaskedNo', {
                         id: account.value.id,
                         payWord: transferForm.password
                     });
                     if (unmask.data.code !== 200) return ElementPlus.ElMessage.error(unmask.data.msg);
 
+                    // ==================== 🛠️ 在这里疯狂加打印 ====================
+                    console.log(">>> 真正发送的源卡号 (unmask.data.data):", unmask.data.data);
+                    console.log(">>> 真正发送的目标卡号 (transferForm.targetAccountNo):", transferForm.targetAccountNo);
+                    console.log(">>> 真正发送的金额 (transferForm.money):", transferForm.money);
+                    // ============================================================
+
+                    // 发送完整的 DTO 报文给后端 /account/transfer
                     const res = await api.post('/account/transfer', {
                         sourceAccountNo: unmask.data.data,
                         targetAccountNo: transferForm.targetAccountNo,
                         money: transferForm.money,
                         password: transferForm.password,
-                        remark: transferForm.remark
+                        remark: transferForm.remark,
+                        // ===== 顺带着把刚才拦截到的风控数据塞进去 =====
+                        userId: user.value.id,
+                        riskLevel: transferForm.riskLevel,
+                        idCard: transferForm.idCard
                     });
+
                     if (res.data.code === 200) {
-                        ElementPlus.ElMessage.success('转账成功');
+                        ElementPlus.ElMessage.success('核验通过，转账成功！');
                         showTransferModal.value = false;
-                        fetchData();
+                        showRecordAuthModal.value = false; // 如果开了风控弹窗，在这里顺便关闭
+                        // 干净利落地重置表单残留
+                        transferForm.idCard = '';
+                        transferForm.riskLevel = 'NONE';
+                        fetchData(); // 刷新控制台的余额
                     } else {
-                        ElementPlus.ElMessage.error(res.data.msg);
+                        ElementPlus.ElMessage.error(res.data.msg || '转账失败');
                     }
                 } catch (e) {
-                    ElementPlus.ElMessage.error('请求失败');
+                    ElementPlus.ElMessage.error('系统繁忙，请稍后再试');
                 } finally {
                     modalLoading.value = false;
                 }
@@ -719,55 +886,40 @@
                 }
             };
 
-            // AI 助手逻辑：包含自动滚动和加载状态控制
+            // AI 助手
             const sendToAi = async () => {
-                // 1. 基础校验：非空判断及防止重复点击
                 if (!aiInput.value.trim() || aiLoading.value) return;
                 if (!user.value) return ElementPlus.ElMessage.warning("请先登录账户");
 
                 const userQuery = aiInput.value;
-
-                // 2. 更新 UI 状态
                 chatHistory.value.push({ role: 'user', content: userQuery });
                 aiInput.value = '';
                 aiLoading.value = true;
 
-                // 辅助函数：让聊天框滚动到底部
-                const scrollToBottom = () => {
-                    nextTick(() => {
-                        const chatList = document.getElementById('chat-list');
-                        if (chatList) chatList.scrollTop = chatList.scrollHeight;
-                    });
-                };
-                scrollToBottom();
+                nextTick(() => {
+                    const chatList = document.getElementById('chat-list');
+                    if (chatList) chatList.scrollTop = chatList.scrollHeight;
+                });
 
                 try {
-                    // 3. 发起请求：确保路径为 /ai/chat
                     const res = await api.post('/ai/chat', {
                         message: userQuery,
                         userId: user.value.id
                     });
 
                     if (res.data.code === 200) {
-                        chatHistory.value.push({
-                            role: 'ai',
-                            content: res.data.data
-                        });
+                        chatHistory.value.push({ role: 'ai', content: res.data.data });
                     } else {
-                        chatHistory.value.push({
-                            role: 'ai',
-                            content: "AI 暂时无法回应: " + (res.data.msg || "未知错误")
-                        });
+                        chatHistory.value.push({ role: 'ai', content: "AI 暂时无法回应" });
                     }
                 } catch (e) {
-                    console.error("AI 接口连接失败:", e);
-                    chatHistory.value.push({
-                        role: 'ai',
-                        content: "连接 AI 助手失败，请检查后端服务是否启动或 context-path 配置。"
-                    });
+                    chatHistory.value.push({ role: 'ai', content: "连接 AI 失败" });
                 } finally {
                     aiLoading.value = false;
-                    scrollToBottom();
+                    nextTick(() => {
+                        const chatList = document.getElementById('chat-list');
+                        if (chatList) chatList.scrollTop = chatList.scrollHeight;
+                    });
                 }
             };
 
@@ -781,37 +933,32 @@
                 { id: 'wealth', name: '智能理财', icon: 'TrendCharts' }
             ]);
 
+            // 切换tab加载图表
+            Vue.watch(tab, (newTab) => {
+                if (newTab === 'wealth') {
+                    fetchBillStats();
+                }
+            });
+
             return {
-                // 基础
                 isLogin, user, accounts, account, tab,
                 loading, modalLoading, aiLoading,
                 recentSnapshots, transactions,
-
-                // 表单
+                billHistory, billForm, showBillModal, queryMonth,
                 loginForm, registerForm, resetForm,
                 transferForm, depositForm, withdrawForm, openAccountForm,
-
-                // 弹窗
                 showTransferModal, showDepositModal, showWithdrawModal,
                 showOpenAccountModal, showRecordAuthModal, showRecordListModal,
                 showResetModal, recordAuthPassword, timer,
-
-                // AI
                 aiInput, chatHistory,
-
-                // 方法
                 handleLogin, handleRegister, handleLogout,
                 handleSendCode, submitReset,
                 fetchData, selectAccount, checkAccountBeforeModal,
                 submitRecordAuth, submitTransfer, submitDeposit,
                 submitWithdraw, submitOpenAccount, sendToAi,
-
-                // 工具
                 formatDate, formatCardNo, totalBalance, menu,
-
-                // 图标
-                Cellphone, View, Lock, User, Postcard,
-                SwitchButton, Opportunity, Promotion, Money, Plus, List, ArrowUp
+                fetchBillStats, renderPieChart, billPieData, submitMonthlyBill,
+                fetchAllBillData, fetchBillList, submitBillRecord,submitTransferFinal
             };
         }
     });

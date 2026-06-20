@@ -1,21 +1,25 @@
 spring:
   application:
     name: Pocket-Bank_plus
-  datasource: # 数据库配置（层级结构更清晰）
-    url: jdbc:mysql://localhost:3306/pocket_bank
-    username: root
-    password: 123456
+  datasource: # 数据库配置已切换为 TiDB 云数据库
+    url: jdbc:mysql://gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/pocket_bank?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: 48NouLV9vQyeye8.root
+    # 【⚠️重要】请把下面括号和文字删掉，换成你刚才点 "Generate Password" 生成出来的那个真正的长密码
+    password: Lh3kiZWgNlJ3KsSg
     driver-class-name: com.mysql.cj.jdbc.Driver
+
 server:
-  port: 8080  # 项目启动端口
+  port: 8080  # 项目启动端口（Render 部署时会自动识别，这里保持默认即可）
   servlet:
     context-path: /demo  # 项目访问路径前缀
   tomcat:
     uri-encoding: UTF-8
+
 logging:
   level:
     org.springframework.web: INFO  # 日志级别
     com.demo.mapper: DEBUG   # 自定义包的日志级别
+
 # 原 MyBatis-Plus 配置删除，替换为原生 MyBatis 配置
 mybatis:
   mapper-locations: classpath:mapper/*.xml  # 指定Mapper XML文件的位置
